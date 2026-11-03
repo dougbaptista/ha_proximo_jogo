@@ -6,7 +6,7 @@
  * times, escudos, campeonato, estádio, transmissão e placar.
  */
 
-const CARD_VERSION = "0.1.0";
+const CARD_VERSION = "0.1.1";
 const DOMAIN = "proximo_jogo";
 
 const TEXTOS = {
@@ -59,7 +59,8 @@ class ProximoJogoCard extends HTMLElement {
         (hass.entities?.[id]?.platform === DOMAIN ||
           "sigla_time" in (hass.states[id].attributes || {})),
     );
-    return { entity: entity || "" };
+    // os padrões vão explícitos para o editor visual mostrar os interruptores como estão no card
+    return { entity: entity || "", mostrar_campeonato: true, mostrar_transmissao: true, mostrar_nome: false };
   }
 
   static getConfigForm() {
@@ -207,7 +208,9 @@ class ProximoJogoCard extends HTMLElement {
         : `<div class="x">X</div>`;
     const local = a.estadio || (a.mando === "casa" ? this._t("em_casa") : this._t("fora"));
 
-    const campeonato = [a.campeonato, a.rodada ? `${this._t("rodada")} ${a.rodada}` : ""]
+    // copas não têm rodada: no lugar dela vai a fase ("Semifinal"); a "Fase única" dos pontos corridos não diz nada
+    const etapa = a.rodada ? `${this._t("rodada")} ${a.rodada}` : a.fase && !/fase única/i.test(a.fase) ? a.fase : "";
+    const campeonato = [a.campeonato, etapa]
       .filter(Boolean)
       .join(" · ");
     const topo =

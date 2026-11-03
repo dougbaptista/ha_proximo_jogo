@@ -10,7 +10,7 @@ PLATFORMS: Final = ["sensor", "calendar"]
 
 # Mantida igual à "version" do manifest (há teste): vai na URL do card para o
 # navegador não usar o JS antigo do cache depois de uma atualização.
-VERSION: Final = "0.1.0"
+VERSION: Final = "0.1.1"
 
 CONF_SERIE: Final = "serie"
 CONF_EQUIPE_ID: Final = "equipe_id"
