@@ -1,7 +1,7 @@
 blueprint:
   name: Próximo Jogo - aviso antes do jogo
   description: >
-    Avisa no celular antes do jogo do seu time e repete o aviso de tempos em
+    Avisa antes do jogo do seu time e repete o aviso de tempos em
     tempos até a bola rolar. Quando o jogo começa, se tiver alguém em casa,
     acende a luz na cor do time.
 
@@ -39,19 +39,18 @@ blueprint:
           max: 240
           step: 5
           unit_of_measurement: min
-    celular:
-      name: Celular que recebe o aviso
-      description: Precisa do aplicativo do Home Assistant instalado no celular.
-      selector:
-        device:
-          filter:
-            - integration: mobile_app
-    acoes_extras:
-      name: Ações extras de aviso (opcional)
+    aviso:
+      name: Como avisar
       description: >
-        Para avisar por Telegram, WhatsApp, Alexa... A variável {{ mensagem }}
-        tem o texto pronto.
-      default: []
+        Já vem com a notificação do próprio Home Assistant. Troque pelo
+        celular (notify.mobile_app_...), Telegram, WhatsApp ou Alexa, usando
+        {{ titulo }} e {{ mensagem }} no texto.
+      default:
+        - action: persistent_notification.create
+          data:
+            title: "{{ titulo }}"
+            message: "{{ mensagem }}"
+            notification_id: proximo_jogo_aviso
       selector:
         action: {}
     presenca:
@@ -114,13 +113,9 @@ actions:
               ({{ (as_datetime(inicio) | as_local).strftime('%H:%M') }}).
               {%- if state_attr(jogo, 'estadio') %} Local: {{ state_attr(jogo, 'estadio') }}.{% endif %}
               {%- if state_attr(jogo, 'transmissao') %} Onde assistir: {{ state_attr(jogo, 'transmissao') | join(', ') }}.{% endif %}
-        - domain: mobile_app
-          type: notify
-          device_id: !input celular
-          title: "⚽ Jogo do {{ state_attr(jogo, 'time') }}"
-          message: "{{ mensagem }}"
+            titulo: "⚽ Jogo do {{ state_attr(jogo, 'time') }}"
         - choose: []
-          default: !input acoes_extras
+          default: !input aviso
         # Espera o intervalo, sem passar do início do jogo.
         - delay:
             seconds: >
