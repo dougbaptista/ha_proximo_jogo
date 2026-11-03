@@ -15,7 +15,15 @@ Integração para o Home Assistant que mostra o **próximo jogo do seu clube** d
 - **Placar ao vivo:** perto do jogo e durante ele, a atualização passa de 1 hora para 5 minutos e o card mostra o placar.
 - **Mais de um clube:** adicione a integração de novo para cada clube.
 
-## Instalação via HACS
+## Instalação
+
+### Pelo Marketplace (Home Assistant 2026.11 ou mais novo)
+
+1. Vá em **Configurações > Marketplace** e clique em **Adicionar a partir do link**. Na primeira vez, ele pede para conectar a sua conta do GitHub.
+2. Cole `https://github.com/dougbaptista/ha_proximo_jogo` e clique em **Adicionar**.
+3. Abra **Próximo Jogo** na seção **Novo** e clique em **Instalar**. Não precisa reiniciar: a configuração abre em seguida.
+
+### Pelo HACS (versões anteriores)
 
 1. No HACS, abra o menu de três pontos, depois **Repositórios personalizados**.
 2. Adicione `https://github.com/dougbaptista/ha_proximo_jogo` com o tipo **Integração**.
