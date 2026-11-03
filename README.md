@@ -4,7 +4,7 @@
 
 Integração para o Home Assistant que mostra o **próximo jogo do seu clube** das Séries A e B do Brasileirão: adversário, data e hora, estádio, campeonato, rodada e onde assistir. Os dados vêm do [ge.globo](https://ge.globo.com/), e a integração já vem com um **card pronto** para o painel.
 
-<p align="center"><img src="logo.png" width="128" alt="Próximo Jogo"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/dougbaptista/ha_proximo_jogo/main/logo.png" width="128" alt="Próximo Jogo"></p>
 
 ## O que ela faz
 
