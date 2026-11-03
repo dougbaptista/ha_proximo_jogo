@@ -1,0 +1,151 @@
+blueprint:
+  name: Próximo Jogo - aviso antes do jogo
+  description: >
+    Avisa no celular antes do jogo do seu time e repete o aviso de tempos em
+    tempos até a bola rolar. Quando o jogo começa, se tiver alguém em casa,
+    acende a luz na cor do time.
+
+
+    Usa o sensor "Próximo jogo" da integração Próximo Jogo
+    (https://github.com/dougbaptista/ha_proximo_jogo).
+  domain: automation
+  source_url: https://github.com/dougbaptista/ha_proximo_jogo/blob/main/blueprints/automation/proximo_jogo/aviso_do_jogo.yaml
+  input:
+    jogo:
+      name: Time
+      description: O sensor "Próximo jogo" do time (ex.: sensor.gremio_proximo_jogo).
+      selector:
+        entity:
+          filter:
+            - integration: proximo_jogo
+              domain: sensor
+              device_class: timestamp
+    antecedencia:
+      name: Começar a avisar quanto tempo antes
+      default: 120
+      selector:
+        number:
+          min: 5
+          max: 1440
+          step: 5
+          unit_of_measurement: min
+    intervalo:
+      name: Repetir o aviso a cada
+      description: Use 0 para avisar uma vez só.
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 240
+          step: 5
+          unit_of_measurement: min
+    celular:
+      name: Celular que recebe o aviso
+      description: Precisa do aplicativo do Home Assistant instalado no celular.
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+    acoes_extras:
+      name: Ações extras de aviso (opcional)
+      description: >
+        Para avisar por Telegram, WhatsApp, Alexa... A variável {{ mensagem }}
+        tem o texto pronto.
+      default: []
+      selector:
+        action: {}
+    presenca:
+      name: Quem conta como "tem alguém em casa"
+      description: A zona Casa (zone.home), uma pessoa, um grupo ou um sensor de presença.
+      default: zone.home
+      selector:
+        entity:
+          filter:
+            - domain: [zone, person, group, binary_sensor, input_boolean]
+    luzes:
+      name: Luzes que acendem quando o jogo começa (opcional)
+      default: []
+      selector:
+        entity:
+          multiple: true
+          filter:
+            - domain: light
+    cor:
+      name: Cor do time
+      default: [0, 114, 206]
+      selector:
+        color_rgb: {}
+
+mode: single
+max_exceeded: silent
+
+trigger_variables:
+  jogo: !input jogo
+  antecedencia: !input antecedencia
+
+triggers:
+  # Fica verdadeiro quando entra na janela de aviso. O now() faz o Home
+  # Assistant reavaliar a cada minuto, então não precisa de outro gatilho.
+  - trigger: template
+    value_template: >
+      {% set inicio = as_datetime(states(jogo), none) %}
+      {{ inicio is not none
+         and state_attr(jogo, 'hora_definida') != false
+         and inicio - timedelta(minutes=antecedencia | int) <= now() < inicio }}
+
+variables:
+  jogo: !input jogo
+  intervalo: !input intervalo
+  presenca: !input presenca
+  luzes: !input luzes
+  cor: !input cor
+  # Guardado como texto ISO: variáveis de automação não preservam datetime.
+  inicio: "{{ states(jogo) }}"
+
+actions:
+  - repeat:
+      sequence:
+        - variables:
+            minutos: "{{ ((as_datetime(inicio) - now()).total_seconds() / 60) | round(0) | int }}"
+            quando: >-
+              {% if minutos >= 60 %}{{ minutos // 60 }} h{{ ' %02d min' % (minutos % 60) if minutos % 60 else '' }}{% else %}{{ minutos }} min{% endif %}
+            mensagem: >-
+              {{ state_attr(jogo, 'mandante') }} x {{ state_attr(jogo, 'visitante') }} começa em {{ quando }}
+              ({{ (as_datetime(inicio) | as_local).strftime('%H:%M') }}).
+              {%- if state_attr(jogo, 'estadio') %} Local: {{ state_attr(jogo, 'estadio') }}.{% endif %}
+              {%- if state_attr(jogo, 'transmissao') %} Onde assistir: {{ state_attr(jogo, 'transmissao') | join(', ') }}.{% endif %}
+        - domain: mobile_app
+          type: notify
+          device_id: !input celular
+          title: "⚽ Jogo do {{ state_attr(jogo, 'time') }}"
+          message: "{{ mensagem }}"
+        - choose: []
+          default: !input acoes_extras
+        # Espera o intervalo, sem passar do início do jogo.
+        - delay:
+            seconds: >
+              {% set falta = (as_datetime(inicio) - now()).total_seconds() %}
+              {{ [falta, intervalo | int * 60 if intervalo | int > 0 else falta] | min | int }}
+      until:
+        - condition: template
+          value_template: "{{ now() >= as_datetime(inicio) or intervalo | int == 0 }}"
+
+  # Com aviso único (intervalo 0), espera o início para a parte da luz.
+  - wait_template: "{{ now() >= as_datetime(inicio) }}"
+    timeout:
+      hours: 24
+
+  - if:
+      - condition: template
+        value_template: >
+          {% set s = states(presenca) %}
+          {{ luzes | count > 0 and
+             ((presenca.startswith('zone.') and s | int(0) > 0)
+              or s in ['on', 'home']) }}
+    then:
+      - action: light.turn_on
+        target:
+          entity_id: "{{ luzes }}"
+        data:
+          rgb_color: "{{ cor }}"
+          brightness_pct: 100

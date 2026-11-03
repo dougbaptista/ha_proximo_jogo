@@ -59,7 +59,23 @@ Ao clicar no card, abre a página da partida no ge.
 
 > Se o card não aparecer logo depois de instalar, recarregue a página do navegador (Ctrl+F5). O arquivo do card é servido pela própria integração, sem cadastro em **Painéis > Recursos**.
 
-## Exemplo de automação
+## Aviso do jogo (blueprint pronto)
+
+Avisa no celular antes do jogo, repete o aviso de tempos em tempos até a bola rolar e, quando o jogo começa, acende a luz na cor do time se tiver alguém em casa. Importe com um clique e preencha os campos:
+
+[![Importar blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdougbaptista%2Fha_proximo_jogo%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fproximo_jogo%2Faviso_do_jogo.yaml)
+
+| Campo | Padrão | O que faz |
+|---|---|---|
+| Time | | O sensor "Próximo jogo" do time. |
+| Começar a avisar quanto tempo antes | 120 min | Primeiro aviso. |
+| Repetir o aviso a cada | 30 min | Use 0 para avisar uma vez só. |
+| Celular | | Recebe a notificação (aplicativo do Home Assistant). |
+| Ações extras | | Telegram, WhatsApp, Alexa... use `{{ mensagem }}` no texto. |
+| Quem conta como "tem alguém em casa" | `zone.home` | Zona, pessoa, grupo ou sensor de presença. |
+| Luzes e cor do time | | Acendem quando o jogo começa, se tiver alguém em casa. |
+
+## Exemplo de automação com o calendário
 
 Avisar 1 hora antes do jogo, usando o calendário:
 
