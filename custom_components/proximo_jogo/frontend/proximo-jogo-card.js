@@ -147,6 +147,8 @@ class ProximoJogoCard extends HTMLElement {
         day: "2-digit",
         month: "2-digit",
       }).format(data);
+      // "qua., 04/11" -> "Qua, 04/11"
+      rotulo = rotulo.replace(/\.,/, ",");
       rotulo = rotulo.charAt(0).toUpperCase() + rotulo.slice(1);
     }
     if (a.hora_definida === false) return `${rotulo} · ${this._t("a_definir")}`;
