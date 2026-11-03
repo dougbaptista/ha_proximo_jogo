@@ -128,13 +128,18 @@ class ProximoJogoCoordinator(DataUpdateCoordinator[Agenda]):
         if not url_agenda:
             try:
                 pagina_time = await async_fetch(self.hass, url_time)
-                url_agenda = find_agenda_url(pagina_time)
+                url_agenda = await self.hass.async_add_executor_job(
+                    find_agenda_url, pagina_time
+                )
             except (SourceUnavailableError, aiohttp.ClientError, TimeoutError) as err:
                 falhas.append(f"time: {err}")
 
         if url_agenda:
             try:
-                jogos = parse_agenda(await async_fetch(self.hass, url_agenda))
+                pagina_agenda = await async_fetch(self.hass, url_agenda)
+                jogos = await self.hass.async_add_executor_job(
+                    parse_agenda, pagina_agenda
+                )
                 if jogos is not None:
                     return jogos, "agenda"
             except (SourceUnavailableError, aiohttp.ClientError, TimeoutError) as err:
@@ -146,7 +151,9 @@ class ProximoJogoCoordinator(DataUpdateCoordinator[Agenda]):
             except (SourceUnavailableError, aiohttp.ClientError, TimeoutError) as err:
                 falhas.append(f"time: {err}")
         if pagina_time is not None:
-            jogos = parse_team_page(pagina_time)
+            jogos = await self.hass.async_add_executor_job(
+                parse_team_page, pagina_time
+            )
             if jogos is not None:
                 return await self._async_com_estadio(jogos), "time"
 
@@ -156,7 +163,9 @@ class ProximoJogoCoordinator(DataUpdateCoordinator[Agenda]):
         except (SourceUnavailableError, aiohttp.ClientError, TimeoutError) as err:
             falhas.append(f"campeonato: {err}")
             raise SourceUnavailableError("; ".join(falhas)) from err
-        jogos = parse_round(pagina, serie["campeonato"], self.equipe_id)
+        jogos = await self.hass.async_add_executor_job(
+            parse_round, pagina, serie["campeonato"], self.equipe_id
+        )
         if not jogos and falhas:
             # Lista vazia aqui pode ser só falta de cobertura: com falha antes,
             # melhor manter o último jogo conhecido do que apagar o card.
@@ -171,7 +180,9 @@ class ProximoJogoCoordinator(DataUpdateCoordinator[Agenda]):
         if alvo.id not in self._estadios:
             try:
                 pagina = await async_fetch(self.hass, alvo.link)
-                self._estadios[alvo.id] = parse_match_venue(pagina)
+                self._estadios[alvo.id] = await self.hass.async_add_executor_job(
+                    parse_match_venue, pagina
+                )
             except (SourceUnavailableError, aiohttp.ClientError, TimeoutError):
                 _LOGGER.debug("Sem estádio para o jogo %s", alvo.id)
                 return jogos
