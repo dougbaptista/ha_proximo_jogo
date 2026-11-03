@@ -6,7 +6,7 @@
  * times, escudos, campeonato, estádio, transmissão e placar.
  */
 
-const CARD_VERSION = "0.1.1";
+const CARD_VERSION = "0.1.2";
 const DOMAIN = "proximo_jogo";
 
 const TEXTOS = {
@@ -56,8 +56,8 @@ class ProximoJogoCard extends HTMLElement {
     const entity = Object.keys(hass.states).find(
       (id) =>
         id.startsWith("sensor.") &&
-        (hass.entities?.[id]?.platform === DOMAIN ||
-          "sigla_time" in (hass.states[id].attributes || {})),
+        hass.states[id].attributes?.device_class === "timestamp" &&
+        (hass.entities?.[id]?.platform === DOMAIN || "sigla_time" in hass.states[id].attributes),
     );
     // os padrões vão explícitos para o editor visual mostrar os interruptores como estão no card
     return { entity: entity || "", mostrar_campeonato: true, mostrar_transmissao: true, mostrar_nome: false };
@@ -69,7 +69,8 @@ class ProximoJogoCard extends HTMLElement {
         {
           name: "entity",
           required: true,
-          selector: { entity: { filter: { integration: DOMAIN, domain: "sensor" } } },
+          // só o sensor "Próximo jogo" de cada clube (os outros cinco sensores não servem para o card)
+          selector: { entity: { filter: { integration: DOMAIN, domain: "sensor", device_class: "timestamp" } } },
         },
         {
           type: "grid",
