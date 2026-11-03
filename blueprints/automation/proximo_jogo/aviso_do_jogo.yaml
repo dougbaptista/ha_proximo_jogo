@@ -13,7 +13,7 @@ blueprint:
   input:
     jogo:
       name: Time
-      description: O sensor "Próximo jogo" do time (ex.: sensor.gremio_proximo_jogo).
+      description: "O sensor Próximo jogo do time, por exemplo sensor.gremio_proximo_jogo."
       selector:
         entity:
           filter:
