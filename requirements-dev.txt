@@ -1,0 +1,9 @@
+pytest==8.3.4
+black==24.10.0
+isort==5.13.2
+flake8==7.1.1
+
+# Fornecidos pelo Home Assistant em produção (por isso fora do manifest), mas
+# necessários para importar o pacote nos testes.
+aiohttp>=3.9
+voluptuous>=0.13

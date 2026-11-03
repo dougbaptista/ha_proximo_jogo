@@ -1,0 +1,13 @@
+{
+  "domain": "proximo_jogo",
+  "name": "Próximo Jogo",
+  "codeowners": ["@dougbaptista"],
+  "config_flow": true,
+  "dependencies": ["frontend", "http"],
+  "documentation": "https://github.com/dougbaptista/ha_proximo_jogo",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/dougbaptista/ha_proximo_jogo/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

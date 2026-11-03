@@ -1,0 +1,57 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Next Match",
+        "description": "Pick the league of the club you follow. The list of clubs comes from the ge.globo standings.",
+        "data": {
+          "serie": "League"
+        }
+      },
+      "clube": {
+        "title": "Club",
+        "description": "Clubs currently in {serie}. Add the integration again to follow another club.",
+        "data": {
+          "equipe_id": "Club"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach ge.globo; showing the built-in list of clubs."
+    },
+    "abort": {
+      "already_configured": "This club is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "proximo_jogo": {
+        "name": "Next match"
+      },
+      "adversario": {
+        "name": "Opponent"
+      },
+      "campeonato": {
+        "name": "Competition"
+      },
+      "estadio": {
+        "name": "Stadium"
+      },
+      "mando": {
+        "name": "Home or away",
+        "state": {
+          "casa": "Home",
+          "fora": "Away"
+        }
+      },
+      "transmissao": {
+        "name": "Where to watch"
+      }
+    },
+    "calendar": {
+      "jogos": {
+        "name": "Matches"
+      }
+    }
+  }
+}

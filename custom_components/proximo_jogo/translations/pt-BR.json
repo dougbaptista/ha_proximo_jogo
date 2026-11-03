@@ -1,0 +1,57 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Próximo Jogo",
+        "description": "Escolha a série do clube que você acompanha. A lista de clubes vem da classificação do ge.globo.",
+        "data": {
+          "serie": "Série"
+        }
+      },
+      "clube": {
+        "title": "Clube",
+        "description": "Clubes que estão na {serie}. Para acompanhar outro clube, adicione a integração de novo.",
+        "data": {
+          "equipe_id": "Clube"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Não foi possível acessar o ge.globo; mostrando a lista de clubes embutida."
+    },
+    "abort": {
+      "already_configured": "Este clube já está configurado."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "proximo_jogo": {
+        "name": "Próximo jogo"
+      },
+      "adversario": {
+        "name": "Adversário"
+      },
+      "campeonato": {
+        "name": "Campeonato"
+      },
+      "estadio": {
+        "name": "Estádio"
+      },
+      "mando": {
+        "name": "Mando",
+        "state": {
+          "casa": "Em casa",
+          "fora": "Fora de casa"
+        }
+      },
+      "transmissao": {
+        "name": "Onde assistir"
+      }
+    },
+    "calendar": {
+      "jogos": {
+        "name": "Jogos"
+      }
+    }
+  }
+}
