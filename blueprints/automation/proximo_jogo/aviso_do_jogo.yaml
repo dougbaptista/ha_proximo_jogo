@@ -121,9 +121,13 @@ actions:
             seconds: >
               {% set falta = (as_datetime(inicio) - now()).total_seconds() %}
               {{ [falta, intervalo | int * 60 if intervalo | int > 0 else falta] | min | int }}
+      # Para 30 s antes: a espera é truncada e, sem essa folga, sairia um
+      # último aviso de "começa em 0 min".
       until:
         - condition: template
-          value_template: "{{ now() >= as_datetime(inicio) or intervalo | int == 0 }}"
+          value_template: >
+            {{ now() >= as_datetime(inicio) - timedelta(seconds=30)
+               or intervalo | int == 0 }}
 
   # Com aviso único (intervalo 0), espera o início para a parte da luz.
   - wait_template: "{{ now() >= as_datetime(inicio) }}"
