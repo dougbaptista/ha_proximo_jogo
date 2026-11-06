@@ -220,8 +220,12 @@ def test_tabela_completa(serie_a: str) -> None:
 
 
 def test_tabela_recusa_cor_que_nao_e_hexadecimal(serie_a: str) -> None:
-    pagina = serie_a.replace('"faixa_classificacao_cor":"#0000ff"', '"faixa_classificacao_cor":"red;x"', 1)
-    pagina = pagina.replace('"faixa_classificacao":{"cor":"#0000ff"}', '"faixa_classificacao":{}', 1)
+    pagina = serie_a.replace(
+        '"faixa_classificacao_cor":"#0000ff"', '"faixa_classificacao_cor":"red;x"', 1
+    )
+    pagina = pagina.replace(
+        '"faixa_classificacao":{"cor":"#0000ff"}', '"faixa_classificacao":{}', 1
+    )
     assert parse_classificacao(pagina).linhas[0].cor == ""
 
 
@@ -242,10 +246,17 @@ def test_agenda_traz_o_ultimo_jogo_encerrado(agenda_vasco: str) -> None:
 
 @pytest.mark.parametrize(
     ("gols_m", "gols_v", "equipe", "esperado"),
-    [(3, 1, 1, "vitoria"), (3, 1, 2, "derrota"), (0, 2, 2, "vitoria"), (1, 1, 1, "empate")],
+    [
+        (3, 1, 1, "vitoria"),
+        (3, 1, 2, "derrota"),
+        (0, 2, 2, "vitoria"),
+        (1, 1, 1, "empate"),
+    ],
 )
 def test_resultado_do_ponto_de_vista_do_clube(gols_m, gols_v, equipe, esperado) -> None:
-    jogo = replace(_jogo(AGORA, "encerrado"), placar_mandante=gols_m, placar_visitante=gols_v)
+    jogo = replace(
+        _jogo(AGORA, "encerrado"), placar_mandante=gols_m, placar_visitante=gols_v
+    )
     assert resultado(jogo, equipe) == esperado
 
 

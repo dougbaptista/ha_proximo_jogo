@@ -487,13 +487,15 @@ def parse_classificacao(pagina: str) -> Tabela:
 
 
 def resultado(jogo: Jogo, equipe_id: int) -> str | None:
-    """"vitoria", "empate" ou "derrota" do ponto de vista do clube."""
+    """Vitória, empate ou derrota do ponto de vista do clube."""
     if jogo.placar_mandante is None or jogo.placar_visitante is None:
         return None
     if jogo.placar_mandante == jogo.placar_visitante:
         return "empate"
     mandante_venceu = jogo.placar_mandante > jogo.placar_visitante
-    return "vitoria" if mandante_venceu == (jogo.mandante.id == equipe_id) else "derrota"
+    return (
+        "vitoria" if mandante_venceu == (jogo.mandante.id == equipe_id) else "derrota"
+    )
 
 
 def parse_round(pagina: str, campeonato: str, equipe_id: int) -> list[Jogo]:

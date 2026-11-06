@@ -135,7 +135,9 @@ def test_sensores_novos_tem_nome_traduzido() -> None:
     strings = _load(COMPONENT_DIR / "strings.json")["entity"]["sensor"]
     assert sensor.ClassificacaoSensor._attr_translation_key in strings
     chave = sensor.UltimoResultadoSensor._attr_translation_key
-    assert set(sensor.UltimoResultadoSensor._attr_options) == set(strings[chave]["state"])
+    assert set(sensor.UltimoResultadoSensor._attr_options) == set(
+        strings[chave]["state"]
+    )
 
 
 def test_card_acha_os_sensores_novos_pelo_translation_key() -> None:

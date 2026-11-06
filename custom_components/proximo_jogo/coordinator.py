@@ -201,9 +201,7 @@ class ProximoJogoCoordinator(DataUpdateCoordinator[Agenda]):
             except (SourceUnavailableError, aiohttp.ClientError, TimeoutError) as err:
                 falhas.append(f"time: {err}")
         if pagina_time is not None:
-            jogos = await self.hass.async_add_executor_job(
-                parse_team_page, pagina_time
-            )
+            jogos = await self.hass.async_add_executor_job(parse_team_page, pagina_time)
             if jogos is not None:
                 return await self._async_com_estadio(jogos), "time"
 
