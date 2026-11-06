@@ -46,6 +46,17 @@
       },
       "transmissao": {
         "name": "Onde assistir"
+      },
+      "classificacao": {
+        "name": "Classificação"
+      },
+      "ultimo_resultado": {
+        "name": "Último resultado",
+        "state": {
+          "vitoria": "Vitória",
+          "empate": "Empate",
+          "derrota": "Derrota"
+        }
       }
     },
     "calendar": {

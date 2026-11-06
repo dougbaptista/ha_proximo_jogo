@@ -14,12 +14,15 @@ from custom_components.proximo_jogo.parser import (
     SourceUnavailableError,
     find_agenda_url,
     parse_agenda,
+    parse_agenda_passados,
+    parse_classificacao,
     parse_match_venue,
     parse_round,
     parse_standings,
     parse_team_page,
     proximo,
     proximos,
+    resultado,
     sigla_de,
     slugify,
 )
@@ -196,3 +199,55 @@ def test_slugify(nome: str, slug: str) -> None:
 
 def test_sigla_de_clube_sem_sigla() -> None:
     assert sigla_de("Peñarol") == "PEN"
+
+
+def test_tabela_completa(serie_a: str) -> None:
+    tabela = parse_classificacao(serie_a)
+    assert len(tabela.linhas) == 20
+    assert [ln.posicao for ln in tabela.linhas] == list(range(1, 21))
+    assert (tabela.rodada, tabela.total_rodadas) == (34, 38)
+
+    lider = tabela.linhas[0]
+    assert (lider.equipe_id, lider.sigla) == (262, "FLA")
+    assert lider.pontos == lider.vitorias * 3 + lider.empates
+    assert lider.saldo_gols == lider.gols_pro - lider.gols_contra
+    assert len(lider.ultimos_jogos) == 5 and set(lider.ultimos_jogos) <= {"v", "e", "d"}
+    assert (lider.faixa, lider.cor) == ("Libertadores", "#0000ff")
+    assert tabela.linhas[-1].faixa == "Rebaixados"
+    assert [f["nome"] for f in tabela.faixas][0] == "Libertadores"
+    assert tabela.do_clube(262) is lider
+    assert tabela.do_clube(999999) is None
+
+
+def test_tabela_recusa_cor_que_nao_e_hexadecimal(serie_a: str) -> None:
+    pagina = serie_a.replace('"faixa_classificacao_cor":"#0000ff"', '"faixa_classificacao_cor":"red;x"', 1)
+    pagina = pagina.replace('"faixa_classificacao":{"cor":"#0000ff"}', '"faixa_classificacao":{}', 1)
+    assert parse_classificacao(pagina).linhas[0].cor == ""
+
+
+def test_tabela_ausente() -> None:
+    with pytest.raises(SourceUnavailableError):
+        parse_classificacao("<html></html>")
+
+
+def test_agenda_traz_o_ultimo_jogo_encerrado(agenda_vasco: str) -> None:
+    passados = parse_agenda_passados(agenda_vasco)
+    assert passados, "o recorte da agenda tem jogos passados"
+    assert [j.inicio for j in passados] == sorted(j.inicio for j in passados)
+    ultimo = passados[-1]
+    assert ultimo.situacao == "encerrado"
+    assert ultimo.placar_mandante is not None and ultimo.placar_visitante is not None
+    assert parse_agenda_passados("<html></html>") == []
+
+
+@pytest.mark.parametrize(
+    ("gols_m", "gols_v", "equipe", "esperado"),
+    [(3, 1, 1, "vitoria"), (3, 1, 2, "derrota"), (0, 2, 2, "vitoria"), (1, 1, 1, "empate")],
+)
+def test_resultado_do_ponto_de_vista_do_clube(gols_m, gols_v, equipe, esperado) -> None:
+    jogo = replace(_jogo(AGORA, "encerrado"), placar_mandante=gols_m, placar_visitante=gols_v)
+    assert resultado(jogo, equipe) == esperado
+
+
+def test_resultado_sem_placar() -> None:
+    assert resultado(_jogo(AGORA), 1) is None

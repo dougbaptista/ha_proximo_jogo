@@ -46,6 +46,17 @@
       },
       "transmissao": {
         "name": "Where to watch"
+      },
+      "classificacao": {
+        "name": "Standings"
+      },
+      "ultimo_resultado": {
+        "name": "Last result",
+        "state": {
+          "vitoria": "Win",
+          "empate": "Draw",
+          "derrota": "Loss"
+        }
       }
     },
     "calendar": {

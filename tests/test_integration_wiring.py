@@ -94,7 +94,8 @@ def test_card_is_the_custom_element_the_integration_serves() -> None:
 def test_card_reads_the_attributes_the_sensor_exposes() -> None:
     """Se um atributo mudar de nome no sensor, o card quebraria em silêncio."""
     js = CARD.read_text(encoding="utf-8")
-    usados = set(re.findall(r"\ba\.([a-z_]+)", js))
+    # a = próximo jogo, u = último resultado, t = classificação, ln = linha da tabela
+    usados = set(re.findall(r"\b(?:a|u|t|ln)\.([a-z_]+)", js))
     expostos = set(
         re.findall(r'"([a-z_]+)":', (COMPONENT_DIR / "sensor.py").read_text("utf-8"))
     )
@@ -128,3 +129,19 @@ def test_calendar_event_for_timed_and_all_day_matches() -> None:
 def test_config_flow_and_coordinator_import() -> None:
     assert config_flow.ProximoJogoConfigFlow.VERSION == 1
     assert coordinator.clubes_embarcados("a")
+
+
+def test_sensores_novos_tem_nome_traduzido() -> None:
+    strings = _load(COMPONENT_DIR / "strings.json")["entity"]["sensor"]
+    assert sensor.ClassificacaoSensor._attr_translation_key in strings
+    chave = sensor.UltimoResultadoSensor._attr_translation_key
+    assert set(sensor.UltimoResultadoSensor._attr_options) == set(strings[chave]["state"])
+
+
+def test_card_acha_os_sensores_novos_pelo_translation_key() -> None:
+    js = CARD.read_text(encoding="utf-8")
+    for chave in (
+        sensor.ClassificacaoSensor._attr_translation_key,
+        sensor.UltimoResultadoSensor._attr_translation_key,
+    ):
+        assert f'"{chave}"' in js

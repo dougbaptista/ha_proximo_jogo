@@ -10,7 +10,7 @@ PLATFORMS: Final = ["sensor", "calendar"]
 
 # Mantida igual à "version" do manifest (há teste): vai na URL do card para o
 # navegador não usar o JS antigo do cache depois de uma atualização.
-VERSION: Final = "0.1.2"
+VERSION: Final = "0.2.0"
 
 CONF_SERIE: Final = "serie"
 CONF_EQUIPE_ID: Final = "equipe_id"
@@ -36,6 +36,9 @@ DEFAULT_SERIE: Final = "a"
 UPDATE_INTERVAL: Final = timedelta(hours=1)
 UPDATE_INTERVAL_JOGO: Final = timedelta(minutes=5)
 JANELA_JOGO: Final = timedelta(hours=1)
+# A tabela vem da página da série (~1 MB): durante o jogo ela muda ao vivo,
+# mas basta buscá-la de 10 em 10 minutos.
+TABELA_INTERVALO: Final = timedelta(minutes=10)
 
 REQUEST_TIMEOUT: Final = 30
 # As páginas do ge têm ~1 MB; o teto só barra uma resposta anômala.

@@ -66,6 +66,7 @@ def _install_homeassistant_stubs() -> None:
         SensorEntity=stub_class("SensorEntity"),
         SensorEntityDescription=SensorEntityDescription,
         SensorDeviceClass=types.SimpleNamespace(TIMESTAMP="timestamp", ENUM="enum"),
+        SensorStateClass=types.SimpleNamespace(MEASUREMENT="measurement"),
     )
     module(
         "homeassistant.components.calendar",

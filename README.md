@@ -2,7 +2,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
 
-Integração para o Home Assistant que mostra o **próximo jogo do seu clube** das Séries A e B do Brasileirão: adversário, data e hora, estádio, campeonato, rodada e onde assistir. Os dados vêm do [ge.globo](https://ge.globo.com/), e a integração já vem com um **card pronto** para o painel.
+Integração para o Home Assistant que mostra o **próximo jogo do seu clube** das Séries A e B do Brasileirão: adversário, data e hora, estádio, campeonato, rodada e onde assistir, além do **último resultado** e da **tabela do campeonato**. Os dados vêm do [ge.globo](https://ge.globo.com/), e a integração já vem com um **card pronto** para o painel.
 
 <p align="center"><img src="https://raw.githubusercontent.com/dougbaptista/ha_proximo_jogo/main/logo.png" width="128" alt="Próximo Jogo"></p>
 
@@ -11,6 +11,8 @@ Integração para o Home Assistant que mostra o **próximo jogo do seu clube** d
 - **Escolha em dois passos:** primeiro a série (A ou B), depois o clube. A lista sai da classificação atual do ge, então acompanha quem sobe e quem cai.
 - **Todos os campeonatos:** Brasileirão, Copa do Brasil, Libertadores, Sul-Americana e estaduais, quando o ge publica a agenda do clube.
 - **Card incluído:** é instalado junto com a integração. Basta adicionar o card **Próximo Jogo** ao painel.
+- **Tabela do Brasileirão:** posição, pontos, saldo, os últimos 5 jogos de cada time e as faixas (Libertadores, rebaixamento, acesso), com o seu clube destacado.
+- **Último resultado:** vitória, empate ou derrota no último jogo, pronto para automações ("o time ganhou, acende a luz da sala").
 - **Calendário:** os jogos aparecem no calendário do Home Assistant e servem de gatilho para automações (por exemplo, "1 hora antes do jogo").
 - **Placar ao vivo:** perto do jogo e durante ele, a atualização passa de 1 hora para 5 minutos e o card mostra o placar.
 - **Mais de um clube:** adicione a integração de novo para cada clube.
@@ -47,6 +49,8 @@ Cada clube vira um dispositivo com:
 | `sensor.<clube>_estadio` | `Maracanã` | |
 | `sensor.<clube>_mando` | `fora` | `casa` ou `fora`. |
 | `sensor.<clube>_onde_assistir` | `Premiere, Cartola` | |
+| `sensor.<clube>_classificacao` | `18` | Posição na tabela da série. Os atributos trazem pontos, jogos, vitórias, empates, derrotas, saldo, aproveitamento, `ultimos_jogos`, `faixa` e a tabela inteira em `tabela`. |
+| `sensor.<clube>_ultimo_resultado` | `derrota` | `vitoria`, `empate` ou `derrota`. Os atributos trazem o placar, os times e a data. |
 | `calendar.<clube>_jogos` | | Fica ligado durante a partida. |
 
 Atributos do sensor principal: `mandante`, `visitante`, `sigla_mandante`, `sigla_visitante`, `escudo_mandante`, `escudo_visitante`, `adversario`, `mando`, `campeonato`, `fase`, `rodada`, `estadio`, `transmissao`, `link`, `situacao` (`futuro`, `ao_vivo` ou `sem_jogo`), `hora_definida`, `placar_mandante`, `placar_visitante`, `fonte` e `ultima_atualizacao`.
@@ -55,15 +59,29 @@ Atributos do sensor principal: `mandante`, `visitante`, `sigla_mandante`, `sigla
 
 Depois de instalar, edite o painel, clique em **Adicionar card** e procure **Próximo Jogo**. O card já vem configurado com o sensor do clube. Em YAML:
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/dougbaptista/ha_proximo_jogo/main/docs/card-completo.png" width="380" alt="Card no modo completo">
+  <img src="https://raw.githubusercontent.com/dougbaptista/ha_proximo_jogo/main/docs/card-tabela.png" width="300" alt="Card no modo tabela">
+</p>
+
+O card tem três tamanhos, escolhidos em **Tamanho do card** no editor:
+
+| `modo` | Mostra |
+|---|---|
+| `compacto` | Só o próximo jogo (o padrão de quem já usava a versão 0.1). |
+| `completo` | Próximo jogo, último resultado e os cinco times em volta do seu na tabela. O botão **Ver tabela** abre a classificação inteira. |
+| `tabela` | Só a classificação inteira, com a legenda das faixas. |
+
 ```yaml
 type: custom:proximo-jogo-card
 entity: sensor.gremio_proximo_jogo
+modo: completo              # compacto, completo ou tabela
 mostrar_campeonato: true    # campeonato e rodada no topo
 mostrar_transmissao: true   # "onde assistir" embaixo
 mostrar_nome: false         # nome do time em vez da sigla
 ```
 
-Ao clicar no card, abre a página da partida no ge.
+Ao clicar no jogo, abre a página da partida no ge. O card acha sozinho os sensores de classificação e último resultado do mesmo clube.
 
 > Se o card não aparecer logo depois de instalar, recarregue a página do navegador (Ctrl+F5). O arquivo do card é servido pela própria integração, sem cadastro em **Painéis > Recursos**.
 

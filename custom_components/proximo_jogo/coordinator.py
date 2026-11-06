@@ -27,6 +27,7 @@ from .const import (
     MAX_PAGE_BYTES,
     REQUEST_TIMEOUT,
     SERIES,
+    TABELA_INTERVALO,
     UPDATE_INTERVAL,
     UPDATE_INTERVAL_JOGO,
     USER_AGENT,
@@ -38,8 +39,11 @@ from .parser import (
     Jogo,
     ProximoJogoError,
     SourceUnavailableError,
+    Tabela,
     find_agenda_url,
     parse_agenda,
+    parse_agenda_passados,
+    parse_classificacao,
     parse_match_venue,
     parse_round,
     parse_standings,
@@ -59,6 +63,10 @@ class Agenda:
     jogos: list[Jogo] = field(default_factory=list)
     # "agenda", "time" ou "campeonato": de qual página vieram os jogos.
     fonte: str = ""
+    # Último jogo encerrado (só a agenda traz os passados).
+    ultimo: Jogo | None = None
+    # Classificação da série do clube; None se o ge não respondeu ainda.
+    tabela: Tabela | None = None
 
 
 class ProximoJogoCoordinator(DataUpdateCoordinator[Agenda]):
@@ -75,6 +83,14 @@ class ProximoJogoCoordinator(DataUpdateCoordinator[Agenda]):
         self.last_successful_update: datetime | None = None
         # Estádio por jogo, para não baixar a página da partida a cada ciclo.
         self._estadios: dict[int, str] = {}
+        # Último resultado e tabela ficam guardados: se a busca deles falhar,
+        # o card segue com o último dado bom em vez de sumir com a seção.
+        self._ultimo: Jogo | None = None
+        self._tabela: Tabela | None = None
+        self._tabela_em: datetime | None = None
+        # Página da série baixada neste ciclo (o último recurso dos jogos já
+        # baixa ela), para a tabela não buscar a mesma página duas vezes.
+        self._pagina_serie: str | None = None
 
     @property
     def equipe_id(self) -> int:
@@ -95,6 +111,7 @@ class ProximoJogoCoordinator(DataUpdateCoordinator[Agenda]):
         return info.get("serie") or self.entry.data.get(CONF_SERIE, DEFAULT_SERIE)
 
     async def _async_update_data(self) -> Agenda:
+        self._pagina_serie = None
         try:
             jogos, fonte = await self._async_buscar()
         except SourceUnavailableError as err:
@@ -107,9 +124,37 @@ class ProximoJogoCoordinator(DataUpdateCoordinator[Agenda]):
             raise UpdateFailed("Tempo esgotado ao acessar o ge.globo.") from err
 
         jogos = [self._com_siglas(j) for j in jogos]
+        tabela = await self._async_tabela()
         self.last_successful_update = dt_util.utcnow()
         self._ajustar_intervalo(jogos)
-        return Agenda(jogos=jogos, fonte=fonte)
+        ultimo = self._com_siglas(self._ultimo) if self._ultimo else None
+        return Agenda(jogos=jogos, fonte=fonte, ultimo=ultimo, tabela=tabela)
+
+    async def _async_tabela(self) -> Tabela | None:
+        """Classificação da série, no máximo a cada ``TABELA_INTERVALO``.
+
+        Falha aqui não derruba a agenda: o próximo jogo é o principal, e a
+        tabela antiga continua valendo até a próxima busca dar certo.
+        """
+        agora = dt_util.utcnow()
+        if (
+            self._tabela is not None
+            and self._tabela_em is not None
+            and self._pagina_serie is None
+            and agora - self._tabela_em < TABELA_INTERVALO
+        ):
+            return self._tabela
+        try:
+            pagina = self._pagina_serie or await async_fetch(
+                self.hass, SERIES[self.serie]["url"]
+            )
+            self._tabela = await self.hass.async_add_executor_job(
+                parse_classificacao, pagina
+            )
+            self._tabela_em = agora
+        except (ProximoJogoError, aiohttp.ClientError, TimeoutError) as err:
+            _LOGGER.debug("Classificação indisponível: %s", err)
+        return self._tabela
 
     async def _async_buscar(self) -> tuple[list[Jogo], str]:
         """Tenta agenda, página do time e página do campeonato, nessa ordem.
@@ -141,6 +186,11 @@ class ProximoJogoCoordinator(DataUpdateCoordinator[Agenda]):
                     parse_agenda, pagina_agenda
                 )
                 if jogos is not None:
+                    passados = await self.hass.async_add_executor_job(
+                        parse_agenda_passados, pagina_agenda
+                    )
+                    if passados:
+                        self._ultimo = passados[-1]
                     return jogos, "agenda"
             except (SourceUnavailableError, aiohttp.ClientError, TimeoutError) as err:
                 falhas.append(f"agenda: {err}")
@@ -163,6 +213,7 @@ class ProximoJogoCoordinator(DataUpdateCoordinator[Agenda]):
         except (SourceUnavailableError, aiohttp.ClientError, TimeoutError) as err:
             falhas.append(f"campeonato: {err}")
             raise SourceUnavailableError("; ".join(falhas)) from err
+        self._pagina_serie = pagina
         jogos = await self.hass.async_add_executor_job(
             parse_round, pagina, serie["campeonato"], self.equipe_id
         )

@@ -215,6 +215,19 @@ def parse_agenda(pagina: str) -> list[Jogo] | None:
     return sorted(jogos, key=lambda j: j.inicio)
 
 
+def parse_agenda_passados(pagina: str) -> list[Jogo]:
+    """Jogos já encerrados da agenda, do mais antigo ao mais recente."""
+    dados = _json_apos(pagina, r"scheduleTeam\s*:\s*\{", "{")
+    if not isinstance(dados, dict):
+        return []
+    passados = []
+    for evento in (dados.get("teamAgenda") or {}).get("past") or []:
+        jogo = _jogo_agenda(evento)
+        if jogo is not None and jogo.placar_mandante is not None:
+            passados.append(replace(jogo, situacao="encerrado"))
+    return sorted(passados, key=lambda j: j.inicio)
+
+
 def find_agenda_url(pagina: str) -> str | None:
     """Link da agenda dentro da página do time (o nome varia: "do"/"da")."""
     pagina = pagina.replace("\\/", "/")
@@ -359,6 +372,128 @@ def parse_standings(pagina: str) -> list[Clube]:
     if not clubes:
         raise SourceUnavailableError("A classificação do campeonato veio vazia.")
     return clubes
+
+
+@dataclass(frozen=True)
+class LinhaTabela:
+    """Uma linha da classificação, com tudo que o card da tabela mostra."""
+
+    posicao: int
+    equipe_id: int
+    nome: str
+    sigla: str
+    escudo: str
+    pontos: int
+    jogos: int
+    vitorias: int
+    empates: int
+    derrotas: int
+    gols_pro: int
+    gols_contra: int
+    saldo_gols: int
+    aproveitamento: int
+    # Do mais antigo ao mais recente: "v", "e" ou "d".
+    ultimos_jogos: tuple[str, ...] = field(default_factory=tuple)
+    # Faixa da tabela (Libertadores, rebaixamento...) e a cor que o ge usa.
+    faixa: str = ""
+    cor: str = ""
+    variacao: int = 0
+
+
+@dataclass(frozen=True)
+class Tabela:
+    """A classificação inteira de uma série."""
+
+    linhas: tuple[LinhaTabela, ...]
+    rodada: int | None = None
+    total_rodadas: int | None = None
+    # Legenda das faixas, na ordem da tabela: [{"nome": ..., "cor": ...}].
+    faixas: tuple[dict, ...] = field(default_factory=tuple)
+
+    def do_clube(self, equipe_id: int) -> LinhaTabela | None:
+        """A linha do clube, se ele está nesta série."""
+        return next((ln for ln in self.linhas if ln.equipe_id == equipe_id), None)
+
+
+_COR = re.compile(r"^#[0-9a-fA-F]{3,8}$")
+
+
+def _cor(valor) -> str:
+    """Só aceita cor hexadecimal: ela vai direto para o CSS do card."""
+    return valor if isinstance(valor, str) and _COR.match(valor) else ""
+
+
+def parse_classificacao(pagina: str) -> Tabela:
+    """A tabela completa da página do campeonato, com pontos e forma recente."""
+    dados = _json_apos(pagina, r'"classificacao"\s*:\s*\[', "[")
+    if not isinstance(dados, list):
+        raise SourceUnavailableError("A página do campeonato veio sem classificação.")
+
+    faixas_brutas = _json_apos(pagina, r'"faixas_classificacao"\s*:\s*\[', "[")
+    faixas = tuple(
+        {"nome": f["nome"], "cor": _cor(f.get("cor"))}
+        for f in faixas_brutas or []
+        if isinstance(f, dict) and f.get("nome") and _cor(f.get("cor"))
+    )
+    nome_da_cor = {f["cor"].lower(): f["nome"] for f in faixas}
+
+    linhas = []
+    for linha in dados:
+        linha = linha or {}
+        equipe_id = _inteiro(linha.get("equipe_id"))
+        posicao = _inteiro(linha.get("ordem"))
+        nome = linha.get("nome_popular")
+        if equipe_id is None or posicao is None or not nome:
+            continue
+        cor = _cor(
+            linha.get("faixa_classificacao_cor")
+            or (linha.get("faixa_classificacao") or {}).get("cor")
+        )
+        linhas.append(
+            LinhaTabela(
+                posicao=posicao,
+                equipe_id=equipe_id,
+                nome=nome,
+                sigla=linha.get("sigla") or sigla_de(nome),
+                escudo=linha.get("escudo") or "",
+                pontos=_inteiro(linha.get("pontos")) or 0,
+                jogos=_inteiro(linha.get("jogos")) or 0,
+                vitorias=_inteiro(linha.get("vitorias")) or 0,
+                empates=_inteiro(linha.get("empates")) or 0,
+                derrotas=_inteiro(linha.get("derrotas")) or 0,
+                gols_pro=_inteiro(linha.get("gols_pro")) or 0,
+                gols_contra=_inteiro(linha.get("gols_contra")) or 0,
+                saldo_gols=_inteiro(linha.get("saldo_gols")) or 0,
+                aproveitamento=_inteiro(linha.get("aproveitamento")) or 0,
+                ultimos_jogos=tuple(
+                    r for r in linha.get("ultimos_jogos") or [] if r in ("v", "e", "d")
+                ),
+                faixa=nome_da_cor.get(cor.lower(), ""),
+                cor=cor,
+                variacao=_inteiro(linha.get("variacao")) or 0,
+            )
+        )
+    if not linhas:
+        raise SourceUnavailableError("A classificação do campeonato veio vazia.")
+
+    rodada = _json_apos(pagina, r'"rodada"\s*:\s*\{(?=\s*"atual")', "{")
+    rodada = rodada if isinstance(rodada, dict) else {}
+    return Tabela(
+        linhas=tuple(sorted(linhas, key=lambda ln: ln.posicao)),
+        rodada=_inteiro(rodada.get("atual")),
+        total_rodadas=_inteiro(rodada.get("ultima")),
+        faixas=faixas,
+    )
+
+
+def resultado(jogo: Jogo, equipe_id: int) -> str | None:
+    """"vitoria", "empate" ou "derrota" do ponto de vista do clube."""
+    if jogo.placar_mandante is None or jogo.placar_visitante is None:
+        return None
+    if jogo.placar_mandante == jogo.placar_visitante:
+        return "empate"
+    mandante_venceu = jogo.placar_mandante > jogo.placar_visitante
+    return "vitoria" if mandante_venceu == (jogo.mandante.id == equipe_id) else "derrota"
 
 
 def parse_round(pagina: str, campeonato: str, equipe_id: int) -> list[Jogo]:
