@@ -59,10 +59,9 @@ Atributos do sensor principal: `mandante`, `visitante`, `sigla_mandante`, `sigla
 
 Depois de instalar, edite o painel, clique em **Adicionar card** e procure **Próximo Jogo**. O card já vem configurado com o sensor do clube. Em YAML:
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/dougbaptista/ha_proximo_jogo/main/docs/card-completo.png" width="380" alt="Card no modo completo">
-  <img src="https://raw.githubusercontent.com/dougbaptista/ha_proximo_jogo/main/docs/card-tabela.png" width="300" alt="Card no modo tabela">
-</p>
+![Card no modo completo: próximo jogo, último resultado e o trecho da tabela em volta do clube](docs/card-completo.png)
+
+![Card no modo tabela: a classificação inteira com as faixas](docs/card-tabela.png)
 
 O card tem três tamanhos, escolhidos em **Tamanho do card** no editor:
 
@@ -82,6 +81,10 @@ mostrar_nome: false         # nome do time em vez da sigla
 ```
 
 Ao clicar no jogo, abre a página da partida no ge. O card acha sozinho os sensores de classificação e último resultado do mesmo clube.
+
+Os sensores também servem para montar uma aba inteira de futebol. Na foto abaixo, a aba usa o card nos modos compacto e tabela, um painel de campanha feito com button-card a partir do sensor **Classificação** e a agenda pelo calendário do clube:
+
+![Aba de futebol no painel: próximo jogo, campanha, tabela e agenda](docs/painel-futebol.png)
 
 > Se o card não aparecer logo depois de instalar, recarregue a página do navegador (Ctrl+F5). O arquivo do card é servido pela própria integração, sem cadastro em **Painéis > Recursos**.
 
